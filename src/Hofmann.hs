@@ -30,7 +30,7 @@ ex :: Rou a -> Colist a
 ex = fix $
      \f x -> case x of
                OverR -> Nil
-               NextR g -> g (appL f)
+               NextR g -> g (apL f)
 
 bft :: Tree a -> Colist a
 bft t = ex $ br t OverR
