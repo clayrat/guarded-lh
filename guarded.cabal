@@ -10,6 +10,7 @@ library
   exposed-modules:
       Later
     , Conat
+    , Stream
     , Colist
     , Hofmann
 
