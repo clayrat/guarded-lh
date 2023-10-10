@@ -9,16 +9,16 @@ data Colist a where
   Cons :: a -> Later (Colist a) -> Colist a
 
 forever :: a -> Colist a
-forever x = fix (Cons x)
+forever x = lfix (Cons x)
 
 cat :: Colist a -> Colist a -> Colist a
-cat = fix $
+cat = lfix $
       \f xs ys -> case xs of
                     Nil -> ys
-                    Cons x xs' -> Cons x (apL (apL f xs') (Next ys))
+                    Cons x xs' -> Cons x (f <*> xs' <*> pure ys)
 
 map :: (a -> b) -> Colist a -> Colist b
-map f = fix $
+map f = lfix $
         \g xs -> case xs of
                    Nil -> Nil
-                   Cons x xs' -> Cons (f x) (apL g xs')
+                   Cons x xs' -> Cons (f x) (g <*> xs')

@@ -1,21 +1,30 @@
 {-# LANGUAGE GADTs #-}
 
-module Later where
+module Later (Later, lfix, feedback) where
 
 -------------------------------------------------------------------------------
 -- | Later Library ------------------------------------------------------------
 -------------------------------------------------------------------------------
 
-data Later a = Next a
+data Later a = Next a deriving Show
 
-apL :: Later (a -> b) -> Later a -> Later b
-apL (Next f) (Next a) = Next (f a)
+instance Functor Later where
+  fmap f (Next x) = Next (f x)
 
-{-@ lazy fix @-}
-fix :: (Later a -> a) -> a
-fix f = f (Next (fix f))
+instance Applicative Later where
+  pure = Next
+  Next f <*> Next x = Next (f x)
 
--- Combinators
+{-@ lazy dfix @-}
+dfix :: (Later a -> a) -> Later a
+dfix f = Next (f (dfix f))
 
-mapL :: (a -> b) -> Later a -> Later b
-mapL f = apL (Next f)
+{-@ lazy lfix @-}
+lfix :: (Later a -> a) -> a
+lfix f = f (Next (lfix f))
+--lfix f = f (dfix f)
+
+-- combinators
+
+feedback :: (Later a -> (b , a)) -> b
+feedback f = fst (lfix (f . fmap snd))

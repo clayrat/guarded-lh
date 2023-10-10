@@ -14,60 +14,69 @@ tail :: Stream a -> Later (Stream a)
 tail (Cons _ s') = s'
 
 forever :: a -> Stream a
-forever x = fix (Cons x)
+forever x = lfix (Cons x)
 
 map :: (a -> b) -> Stream a -> Stream b
-map f = fix $ \g' s -> case s of
-                         Cons x s' -> Cons (f x) (apL g' s')
+map f = lfix $ \g' s -> case s of
+                          Cons x s' -> Cons (f x) (g' <*> s')
 
 foldr :: (a -> Later b -> b) -> Stream a -> b
-foldr f = fix $ \g' s -> case s of
-                           Cons x s' -> f x (apL g' s')
+foldr f = lfix $ \g' s -> case s of
+                            Cons x s' -> f x (g' <*> s')
 
 scanl1 :: (a -> a -> a) -> Stream a -> Stream a
-scanl1 f = fix $ \g' s -> case s of
-                            Cons x s' -> Cons x (mapL (Stream.map (f x)) (apL g' s'))
+scanl1 f = lfix $ \g' s -> case s of
+                             Cons x s' -> Cons x ((Stream.map (f x)) <$> (g' <*> s'))
 
 iterate :: Later (a -> a) -> a -> Stream a
-iterate f = fix $ \g' x -> Cons x (apL g' (apL f (Next x)))
+iterate f = lfix $ \g' x -> Cons x (g' <*> (f <*> pure x))
+
+iterate' :: (a -> a) -> a -> Stream a
+iterate' f = Stream.iterate (pure f)
 
 interleave :: Stream a -> Later (Stream a) -> Stream a
-interleave = fix $ \g' s t' -> case s of
-                                 Cons x s' -> Cons x (apL (apL g' t') (Next s'))
+interleave = lfix $ \g' s t' -> case s of
+                                  Cons x s' -> Cons x (g' <*> t' <*> pure s')
+
+interleave' :: Stream a -> Stream a -> Stream a
+interleave' a b = interleave a (pure b)
 
 zipWith :: (a -> b -> c) -> Stream a -> Stream b -> Stream c
-zipWith f = fix $ \g' s t -> case (s, t) of
-                               (Cons x s', Cons y t') -> Cons (f x y) (apL (apL g' s') t')
+zipWith f = lfix $ \g' s t -> case (s, t) of
+                                (Cons x s', Cons y t') -> Cons (f x y) (g' <*> s' <*> t')
+
+zip :: Stream a -> Stream b -> Stream (a ,b)
+zip = Stream.zipWith (,)
 
 -- stream examples
 
 nats :: Stream Int
-nats = fix $ Cons 0 . mapL (Stream.map (+1))
+nats = lfix $ Cons 0 . fmap (Stream.map (+1))
 
 fib :: Stream Int
-fib = fix $ Cons 0 . mapL (\s -> Cons 1 (mapL (Stream.zipWith (+) s) (Stream.tail s)))
+fib = lfix $ Cons 0 . fmap (\s -> Cons 1 ((Stream.zipWith (+) s) <$> (Stream.tail s)))
 
 primes :: Stream Int
-primes = fix $ Cons 2 . mapL (Stream.map (+1) . Stream.scanl1 (*))
+primes = lfix $ Cons 2 . fmap (Stream.map (+1) . Stream.scanl1 (*))
 
 toggle :: Stream Bool
-toggle = fix $ Cons True . Next . Cons False
+toggle = lfix $ Cons True . pure . Cons False
 
 -- aka dragon curve
 paperfolds :: Stream Bool
-paperfolds = fix $ interleave toggle
+paperfolds = lfix $ interleave toggle
 
 thuemorse :: Stream Bool
-thuemorse = fix $ Cons False . mapL (\tm -> Cons True (mapL go (Stream.tail (go tm))))
+thuemorse = lfix $ Cons False . fmap (\tm -> Cons True (go <$> (Stream.tail (go tm))))
   where
   go :: Stream Bool -> Stream Bool
-  go = fix $ \g' s -> case s of
-                        Cons False s' -> Cons False (Next (Cons True (apL g' s')))
-                        Cons True  s' -> Cons True (Next (Cons False (apL g' s')))
+  go = lfix $ \g' s -> case s of
+                         Cons False s' -> Cons False (pure (Cons True  (g' <*> s')))
+                         Cons True  s' -> Cons True  (pure (Cons False (g' <*> s')))
 
 pascal :: Stream (Stream Int)
-pascal = fix $ Cons (forever 1) . mapL (Stream.map go)
+pascal = lfix $ Cons (forever 1) . fmap (Stream.map go)
   where
   go :: Stream Int -> Stream Int
-  go xs = fix $ Cons 1 . apL (mapL (Stream.zipWith (+)) (Stream.tail xs))
+  go xs = lfix $ Cons 1 . (((Stream.zipWith (+)) <$> (Stream.tail xs)) <*>)
 

@@ -18,19 +18,18 @@ data Rou a where
   NextR :: ((Later (Rou a) -> Later (Colist a)) -> Colist a) -> Rou a
 
 unfold :: Rou a -> (Later (Rou a) -> Later (Colist a)) -> Later (Colist a)
-unfold  OverR    f = f (Next OverR)
-unfold (NextR g) f = Next (g f)
+unfold  OverR    f = f (pure OverR)
+unfold (NextR g) f = pure (g f)
 
 {-@ br :: t:Tree a -> Rou a -> Rou a / [treeSize t] @-}
 br :: Tree a -> Rou a -> Rou a
 br (Leaf a)     k = NextR (\f -> a `Cons` unfold k f)
-br (Node l a r) k = NextR (\f -> a `Cons` unfold k (f . mapL (br l . br r)))
+br (Node l a r) k = NextR (\f -> a `Cons` unfold k (f . fmap (br l . br r)))
 
 ex :: Rou a -> Colist a
-ex = fix $
-     \f x -> case x of
-               OverR -> Nil
-               NextR g -> g (apL f)
+ex = lfix $ \f x -> case x of
+                      OverR   -> Nil
+                      NextR g -> g (f <*>)
 
 bft :: Tree a -> Colist a
 bft t = ex $ br t OverR
