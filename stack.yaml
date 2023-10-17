@@ -1,4 +1,4 @@
-resolver: lts-20.23
+resolver: lts-20.26
 packages:
   - .
 
@@ -8,14 +8,14 @@ extra-deps:
   - smtlib-backends-0.3
   - smtlib-backends-process-0.3
   - git: https://github.com/clayrat/liquidhaskell.git
-    commit: 8d929d5f6d429915f28c0b24d4737e6c30e18696
+    commit: bc08df50b39f1f417a30bc01dcfaf83c252f9415
     subdirs:
       - .
       - liquidhaskell-boot
       - liquid-prelude
       - liquid-vector
   - git: https://github.com/ucsd-progsys/liquid-fixpoint.git
-    commit: a325d750fe8deea98663fe7933516d5d1e683ee1
+    commit: e4317af546ad388a87f1307e7cdd4984b00020a7
 #- unordered-containers-0.2.19.1@sha256:db11042bb0356c0adea277d0794743829125b4c99455af6af2bd5f7bd5e88a39,3797
 allow-newer: true
 nix:
