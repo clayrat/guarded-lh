@@ -53,16 +53,29 @@ toStream = lfix $ \ts' n -> case n of
 
 -- TODO prove infinity = repeat True
 
--- concatenation style
-add :: Conat -> Conat -> Conat
-add x = lfix $ \a' y -> case y of
-                          Z    -> x
-                          S y' -> S (a' <*> y')
-
 -- interleaving style
-addI :: Conat -> Conat -> Conat
-addI = lfix $ \a' x y -> case (x, y) of
-                           (Z   , Z   ) -> Z
-                           (S x', Z   ) -> S x'
-                           (Z   , S y') -> S y'
-                           (S x', S y') -> S (pure (S (a' <*> x' <*> y')))
+add :: Conat -> Conat -> Conat
+add = lfix $ \a' x y -> case (x, y) of
+                          (Z   , Z   ) -> Z
+                          (S x', Z   ) -> S x'
+                          (Z   , S y') -> S y'
+                          (S x', S y') -> S (pure (S (a' <*> x' <*> y')))
+
+min :: Conat -> Conat -> Conat
+min = lfix $ \m' x y -> case (x, y) of
+                          (Z   , _)    -> Z
+                          (S _ , Z)    -> Z
+                          (S x', S y') -> S (m' <*> x' <*> y')
+
+max :: Conat -> Conat -> Conat
+max = lfix $ \m' x y -> case (x, y) of
+                          (Z   , y)    -> y
+                          (S x', Z)    -> S x'
+                          (S x', S y') -> S (m' <*> x' <*> y')
+
+-- concatenation style
+addC :: Conat -> Conat -> Conat
+addC x = lfix $ \a' y -> case y of
+                           Z    -> x
+                           S y' -> S (a' <*> y')
+
