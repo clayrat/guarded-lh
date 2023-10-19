@@ -30,7 +30,7 @@ instance Applicative Part where
   (Now f)     <*> (Now a)     = Now (f a)
   (Now f)     <*> (Delay pa') = Delay (fmap ((Now f) <*>) pa')
   (Delay pf') <*> (Now a)     = Delay (fmap (<*> (Now a)) pf')
-  (Delay pf') <*> (Delay pa') = Delay (fmap (\pf -> Delay (fmap (\pa -> pf <*> pa) pa')) pf')
+  (Delay pf') <*> (Delay pa') = Delay (fmap (<*>) pf' <*> pa')
 
 instance Monad Part where
   (Now x)    >>= f = f x
